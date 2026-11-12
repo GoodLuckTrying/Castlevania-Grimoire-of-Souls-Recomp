@@ -5,7 +5,12 @@
 //   ope_en_status.Damage(int, int, int)  damage an enemy takes
 //   uiUtility.GetKeyboardInputText(KEYBOARD_TRIGGER)  key names in the options
 //   SPFXCameraSimple/SPFXCameraCommandBuffer.UpdateVRev()  effects' vertical reverse
+//   gsVideoPlayer.ErrorProc(VideoPlayer, string)  logs videos Windows can't decode
+//   ope_og.Director.Loader / outMuseumModel.Enemy.Director .Finalize()  keep models' bundles
 #include <atomic>
+#include <cstdlib>
+#include <cstdio>
+#include <string>
 #include <cstdint>
 
 #include "il2cpp-api.h"
@@ -18,6 +23,7 @@ namespace recomp
     void f_1bec6fc_orig(Ctx& c);
     void f_2f03f64_orig(Ctx& c);
     void f_2f01c78_orig(Ctx& c);
+    void f_24fe5e8_orig(Ctx& c);
     bool MouseButtonsEnabled();  // mouse_keys.cpp
 
     // Set from the debug menu
@@ -92,4 +98,32 @@ namespace recomp
         c.x[0] = self;
         UseMetalReverse(c);
     }
+
+    // A movie Windows' decoder can't play (hardware decoding broken in the
+    // driver, some Wine/Proton builds): logged, then the game's own handling.
+    void HookVideoError(Ctx& c)
+    {
+        const char* text = "?";
+        std::string message;
+        if (auto* msg = reinterpret_cast<Il2CppString*>(c.x[2]))
+        {
+            for (int i = 0; i < il2cpp_string_length(msg); i++)
+                message += char(il2cpp_string_chars(msg)[i] < 128 ? il2cpp_string_chars(msg)[i] : '?');
+            text = message.c_str();
+        }
+        fprintf(stderr, "GoSRecomp: a video could not be played (%s)\n", text);
+        f_24fe5e8_orig(c);
+    }
+
+    // The loaders of the hub/roster characters (ope_og.Director.Loader) and of
+    // the museum's enemy models unload their asset bundles in their
+    // finalizers, i.e. whenever the garbage collector happens to collect them,
+    // while the model they built is still on screen using those animation
+    // clips. The clips then vanish and the model falls back to its controller's
+    // placeholder: the T-pose in the hub and roster, which came and went with
+    // the collector's timing (driver, Proton version, a Dispatch mission...).
+    // The bundles are left loaded; the game still unloads them on its normal
+    // paths, and loading the same bundle again reuses it.
+    void HookCharacterLoaderFinalize(Ctx&) {}
+    void HookMuseumEnemyDirectorFinalize(Ctx&) {}
 }

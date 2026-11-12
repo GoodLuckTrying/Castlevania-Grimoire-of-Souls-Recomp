@@ -2,7 +2,8 @@
 //
 //   [display]
 //   fps=        ; frame rate cap: 30, 60, 120, 144, ... 0 = no cap. Empty: the game's own (60)
-//   vsync=      ; 1 = wait for the monitor's refresh, 0 = don't. Empty: the game's own
+//   vsync=      ; 1 = wait for the monitor's refresh, 0 = don't. Empty: vsync where it
+//                 gives 60 fps (60/120/180/240 Hz monitors), otherwise a 60 fps cap
 //   mode=       ; fullscreen, borderless or windowed. Empty: as Unity remembers it
 //   width=      ; window or screen size; empty: the monitor's
 //   height=
@@ -12,6 +13,7 @@
 // wrapped so the configured values win. With vsync on, the monitor's refresh
 // rate is the cap: fps then only lowers it to a fraction of the refresh rate.
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <cwctype>
@@ -114,6 +116,22 @@ namespace
         const Settings& s = Config();
         if (s.vsync != -1 || s.fps != -2)
             count = s.vsync == 1 ? VSyncCount() : 0;  // a set fps without vsync=1: no vsync, so the cap applies
+        else if (count > 0)
+        {
+            // The game's own vsync runs it at the monitor's rate; its logic was
+            // made for 60 (above that, attacks miss and some effects vanish).
+            // Keep vsync only where it lands on 60: a 60 Hz monitor, or every
+            // 2nd/3rd/4th refresh of a 120/180/240 Hz one. Otherwise no vsync,
+            // and the game's 60 fps cap applies.
+            int rate = RefreshRate(), k = (rate + 30) / 60;
+            count = k >= 1 && k <= 4 && std::abs(rate - 60 * k) <= 2 ? k : 0;
+        }
+        static int logged = -1;
+        if (count != logged)
+        {
+            logged = count;
+            fprintf(stderr, "GoSRecomp: vsync count %d (monitor %d Hz)\n", count, RefreshRate());
+        }
         g_setVSyncCount(count);
     }
 }

@@ -51,10 +51,10 @@ The MSL is HLSLcc output and very regular, so the translator keeps each function
 
 * intrinsics (`fma`->`mad`, `fract`->`frac`, `rint`->`round`, `dfdx`->`ddx`, `select`, `as_type`, `discard_fragment`), and single-argument vector constructors into casts (Metal broadcasts scalars there, HLSL constructors do not);
 * texture methods (`sample` with `level`/`bias`/`gradient2d`, array slices, `sample_compare`, `read`);
-* constant buffer access (`VGlobals.x` -> `x` in a `cbuffer` with explicit `packoffset`). The buffers are re-laid out with HLSL packing rules and the parameter offsets in the bindings follow.
+* constant buffer access (`VGlobals.x` -> `x` in a `cbuffer` with explicit `packoffset`). The buffers are re-laid out with HLSL packing rules and the parameter offsets in the bindings follow. Float arrays keep Metal's 4-byte stride: they become `float4` arrays indexed as `a[(i) >> 2][(i) & 3]`, and arrays that share a 16-byte register (one ends where the next begins, as in `Custom/DarkWipe`) are merged into one, each indexed from its own offset.
 
 D3D11 links shader stages by register order while Metal links them by name. So for every pass, all vertex and fragment variants share one varying layout: the union of their varyings in semantic order, after `SV_Position`. Metal's in/out structs stay as local structs, and generated wrappers copy into and out of the shared layout.
 
-Textures and samplers keep their Metal slots. Inline samplers (`constexpr sampler`) are not bound by Unity on Metal either; they take an unused register, which D3D11 samples linear/clamp. The few variants using structured buffers (particle instancing, post-processing debug views) get a stub that draws nothing.
+Textures and samplers keep their Metal slots. Inline samplers (`constexpr sampler`) are not bound by Unity on Metal either; they take an unused register, which D3D11 samples linear/clamp. The few variants using structured buffers (particle instancing, post-processing debug views) get a stub that draws nothing. The game never draws those variants: none of its particle systems uses GPU instancing.
 
 HLSL is compiled with `d3dcompiler_47.dll` (`tools/shaders/hlslc.cpp`), which every Windows 10/11 system has; the conversion could therefore also run on the user's machine.

@@ -11,10 +11,12 @@
 //   warned=1      ; set once the first-use warning was accepted
 #include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <deque>
 #include <functional>
+#include <map>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -887,13 +889,13 @@ namespace
     // the tutorial sequence playing, to see where the game waits when it
     // seems stuck.
     // The out-of-battle player characters (ope_og: hub, roster) and their
-    // Animator, on every change, for characters stuck in their bind pose.
+    // Animator, on every change, for the T-pose some players get there: a
+    // character stuck on the base controller's placeholder clip (length 1.00,
+    // one clip playing) instead of its overridden animations.
     void LogHubCharacters()
     {
         static std::string last;
         static int logged = 0;
-        if (logged > 300)
-            return;
         std::string state;
         try
         {
@@ -988,13 +990,20 @@ namespace
                     snprintf(buf, sizeof buf, ", state %08x length %.2f speed %g", uint32_t(info[2]), double(f[4]), double(f[5]));
                     return std::string(buf);
                 });
+                // clips playing on the base layer (the placeholder counts as one)
+                using ClipCount = int32_t (*)(Il2CppObject*, int32_t, bool);
+                static auto clipCount = reinterpret_cast<ClipCount>(
+                    il2cpp_resolve_icall("UnityEngine.Animator::GetAnimatorClipInfoCount(System.Int32,System.Boolean)"));
+                int32_t playing = clipCount ? clipCount(animator, 0, true) : -1;
+                snprintf(buf, sizeof buf, ", %d clip(s) playing", playing);
+                state += buf;
             }
         }
         catch (const Failure& f)
         {
             state = " (" + f.what + ")";
         }
-        if (state != last)
+        if (state != last && logged < 300)
         {
             last = state;
             logged++;

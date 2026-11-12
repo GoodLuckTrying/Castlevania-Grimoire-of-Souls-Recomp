@@ -47,8 +47,8 @@ there. Leave a value empty to keep the game's own behavior.
 
 | Section | What |
 |---|---|
-| `[game]` | `language`: empty follows your Windows language |
-| `[display]` | `fps` (0 = no cap), `vsync`, `mode` (fullscreen, borderless, windowed), `width`, `height` |
+| `[game]` | `language` for the very first start (empty follows your Windows language); after that, the game's options decide |
+| `[display]` | `fps` (0 = no cap), `vsync` (empty: only where it gives 60 fps), `mode` (fullscreen, borderless, windowed), `width`, `height` |
 | `[controller]` | `layout=pc` (default), or `mac` for the tables the macOS build used. `dpad_move=0` stops the d-pad from moving your character. `xinput=0` if an Xbox controller misbehaves. `standard`: other controllers read by their standard buttons (1, default), for every controller (2) or off (0) |
 | `[effects]` | `flip_fix=1`: experimental fix for effects drawn upside down in some screens (off by default) |
 | `[mouse]` | `buttons=0` turns off mouse buttons in the keyboard options |
@@ -68,13 +68,15 @@ effects. Things I know about:
 - The game was made for 60 fps. Higher caps work, but if something feels too
   fast, go back to 60.
 
-No multiplayer: I thought the game had multiplayer, but looks like I was completely wrong mb, which is a good thing in this case.
-
 ### Troubleshooting
 
 - **Setup.bat says "not a GoSRecomp release"**: you downloaded "Source code". Download `GoSRecomp-x.y.z.zip` from the Releases page.
 - **Setup.bat says the files are not the expected ones**: the `.dmg` must be the macOS app, version 1.4.2, unmodified.
-- **Characters T-pose in the hub or roster**: update your graphics driver. An NVIDIA driver update fixed it for the players who had it.
+- **Characters T-pose in the hub or roster**: fixed in 1.0.9. If you still see it, send a crash report.
+- **Pink screen in Chapter IX, levels 2-2 to 2-5**: fixed in 1.1.0. Extract the new release and run `Setup.bat` again, the fix is in the converted data.
+- **Attacks don't hit, enemy attacks are invisible, Maria walks oddly**: the game must run at 60 fps. 1.0.8 does that by default; if you changed `fps` or `vsync`, set `fps=60` and `vsync=0`.
+- **"An error happened when reading the video"**: Windows can't decode the game's videos. Update your graphics driver; on Linux use GE-Proton.
+- **The language in `gosr.ini` does nothing**: it only applies on the very first start. Change it in the game's options.
 - **Controller buttons or sticks are wrong**: PlayStation and Xbox controllers, press Default once in the game's controller options. Other controllers (8BitDo, Switch Pro, ...): use their X-input (Xbox) or Switch mode; if buttons are still wrong, set `standard=2` under `[controller]` in `gosr.ini`. An Xbox controller that misbehaves: `xinput=0`.
 - **The d-pad moves your character** and you don't want it: `dpad_move=0`.
 

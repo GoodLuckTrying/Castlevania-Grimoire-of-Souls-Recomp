@@ -40,8 +40,16 @@ TROUBLESHOOTING
   Download GoSRecomp-x.y.z.zip from the Releases page instead.
 - Setup.bat says the files are not the expected ones: the .dmg must be the
   macOS app, version 1.4.2, unmodified.
-- Characters stand in a T-pose in the hub or roster: update your graphics
-  driver (an NVIDIA driver update fixed it for players who had it).
+- Characters stand in a T-pose in the hub or roster: fixed in 1.0.9. If you
+  still see it, send a crash report.
+- Attacks don't hit, enemy attacks are invisible, Maria walks oddly: the
+  game must run at 60 fps. 1.0.8 does that by default; if you changed fps or
+  vsync in gosr.ini, set fps=60 and vsync=0.
+- "An error happened when reading the video" and Close does nothing: Windows
+  can't decode the game's videos. Update your graphics driver; on Linux use
+  GE-Proton.
+- The language setting in gosr.ini does nothing: it only applies on the very
+  first start. Change the language in the game's options.
 - Controller buttons or sticks are wrong:
   * PlayStation and Xbox controllers: press Default in the game's controller
     options once.
@@ -49,6 +57,8 @@ TROUBLESHOOTING
     Switch mode. If buttons are still wrong, set standard=2 in gosr.ini.
   * An Xbox controller misbehaves since 1.0.3: set xinput=0 in gosr.ini.
   * The d-pad moves your character; dpad_move=0 turns that off.
+- Pink screen in Chapter IX, levels 2-2 to 2-5: fixed in 1.1.0. Run
+  Setup.bat again from the new version, the fix is in the converted data.
 - An effect looks upside down: report it with a crash report (below).
 - The game is slow the first time an effect shows: it converts the effect
   once, then keeps it in gosr_spfx_cache.

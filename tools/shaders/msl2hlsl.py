@@ -259,9 +259,10 @@ def packed_array_name(name):
 
 
 def rewrite_packed_arrays(text, names):
-    """`a[i]` -> `a__packed[(i) >> 2][(i) & 3]` for float arrays, whose Metal
-    stride (4 bytes) HLSL constant buffers cannot express."""
-    for name in names:
+    """`a[i]` -> `g__packed[(i + k) >> 2][(i + k) & 3]` for float arrays, whose
+    Metal stride (4 bytes) HLSL constant buffers cannot express. `names` maps
+    each array to (packed array, float offset k in it)."""
+    for name, (group, k) in names.items():
         out, pos = [], 0
         pat = re.compile(rf"\b{name}\[")
         while True:
@@ -273,12 +274,46 @@ def rewrite_packed_arrays(text, names):
                 depth += {"[": 1, "]": -1}.get(text[j], 0)
                 j += 1
             idx = text[m.end():j - 1]
+            if k:
+                idx = f"({idx}) + {k}"
             out.append(text[pos:m.start()])
-            out.append(f"{packed_array_name(name)}[({idx}) >> 2][({idx}) & 3]")
+            out.append(f"{group}[({idx}) >> 2][({idx}) & 3]")
             pos = j
         out.append(text[pos:])
         text = "".join(out)
     return text
+
+
+def packed_groups(layout):
+    """Float arrays of a constant buffer, grouped where they share a register
+    (a Metal float array needn't start or end on a 16-byte boundary).
+    Returns ({first register: (array name, register count)}, {name: (array name, k)})."""
+    spans = []
+    for mb, off in layout:
+        base, n = split_type(mb.type)
+        if mb.array and n == 1:
+            spans.append([off // 16, (off + 4 * mb.array + 15) // 16, [(mb, off)]])
+    spans.sort(key=lambda s: s[0])
+    groups = []
+    for s in spans:
+        if groups and s[0] < groups[-1][1]:
+            groups[-1][1] = max(groups[-1][1], s[1])
+            groups[-1][2] += s[2]
+        else:
+            groups.append(s)
+    decl, names = {}, {}
+    for r0, r1, members in groups:
+        gname = packed_array_name(members[0][0].name)
+        decl[r0] = (gname, r1 - r0)
+        for mb, off in members:
+            names[mb.name] = (gname, off // 4 - r0 * 4)
+    for mb, off in layout:  # anything else inside a group's registers can't be declared
+        base, n = split_type(mb.type)
+        if not (mb.array and n == 1):
+            for r0, (g, cnt) in decl.items():
+                if r0 * 16 <= off < (r0 + cnt) * 16:
+                    raise Unsupported("constant shares a register with a float array")
+    return decl, names
 
 
 def semantic_of_attribute(name):
@@ -346,7 +381,7 @@ def emit(prog, varyings):
     info = {"cbuffers": [], "textures": [], "samplers": {}, "inputs": []}
     cb_names, tex_kinds = [], {}
     params_hlsl = []
-    packed = []
+    packed = {}
     for t, name, attr in prog.params:
         if t.endswith("&") and t.startswith("constant "):
             st = t[len("constant "):-1].strip()
@@ -354,13 +389,15 @@ def emit(prog, varyings):
             b_reg = int(re.search(r"buffer\s*\((\d+)\)", attr).group(1))
             layout, size = cbuffer_layout(prog.structs[st])
             lines = [f"cbuffer {name} : register(b{b_reg})", "{"]
+            groups, names = packed_groups(layout)
+            packed.update(names)
             for mb, off in layout:
                 base, n = split_type(mb.type)
                 comp = "xyzw"[(off % 16) // 4]
                 if mb.array and n == 1:
-                    count = (mb.array + 3) // 4
-                    lines.append(f"    {hlsl_type(base, 4)} {packed_array_name(mb.name)}[{count}] : packoffset(c{off // 16});")
-                    packed.append(mb.name)
+                    g = groups.get(off // 16)
+                    if g and g[0] == packed_array_name(mb.name):
+                        lines.append(f"    {hlsl_type(base, 4)} {g[0]}[{g[1]}] : packoffset(c{off // 16});")
                     continue
                 if mb.array and n == 2:
                     raise Unsupported("float2 array in a constant buffer")

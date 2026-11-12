@@ -1,3 +1,67 @@
+# GoSRecomp 1.1.0
+
+- **Pink screen in Chapter IX (levels 2-2 to 2-5) fixed** (#33, #37). The
+  darkness of those levels, the one the lamps push back around your
+  character, is drawn by a shader the converter couldn't translate: two of its
+  tables share a slot in its constants, which the Direct3D version didn't
+  allow. The converter put a placeholder in its place, and that placeholder
+  painted the whole screen pink. The shader is now translated properly.
+- Any shader that still can't be translated now draws nothing instead of
+  pink.
+- Includes everything up to 1.0.9: T-pose fix, 60 fps by default, controller
+  fixes, upside-down effects.
+
+Update: extract into a new folder and run `Setup.bat` again, your save is kept.
+Download `GoSRecomp-1.1.0.zip` below (not "Source code").
+
+## A word from me
+
+This is my last release for a while. GoSRecomp started as a personal project,
+something I made to play the game myself, and I shared it because I figured
+others might get some use out of it too. I did the best I could with the time
+I had. I know it's not perfect and some things are still broken. Sorry about
+that.
+
+The source code is all here. If someone more skilled wants to pick it up, fix
+what's left or make an even better port, please do, I'd love to see it.
+
+If you report a bug anyway, start the game with `Play with crash log.bat` and
+attach the `crash_report.zip`. That helps whoever looks at it next.
+
+Thanks to everyone who played, tested and reported things. And let's hope
+Bloodstained 2 is as good as the first one!
+
+Known issues still open: missing or invisible effects in some places (#20,
+#28, #29, #4), attacks dealing 1 damage in Chapter IV for some players (#34),
+videos that Windows/Proton can't decode (#15), some button icons (#6, #7).
+
+# GoSRecomp 1.0.9
+
+- **T-pose in the hub and roster fixed at the source.** The loader of each
+  out-of-battle character released its animation bundles when the garbage
+  collector cleaned it up, even while the character was still on screen. When
+  nothing else held them, the animations were unloaded and the character fell
+  back to its T-pose for the rest of the session. That's why it came and went
+  with launches, drivers, Proton versions or after a Dispatch mission. The
+  bundles now stay loaded. The museum's enemy models had the same problem.
+- Includes 1.0.8: the game runs at 60 fps by default (attacks that miss,
+  invisible enemy attacks, Maria's walk).
+
+Update: extract into a new folder and run `Setup.bat` again, your save is kept.
+Download `GoSRecomp-1.0.9.zip` below (not "Source code").
+
+# GoSRecomp 1.0.8
+
+- **The game runs at 60 fps by default**: on 75/144/165 Hz monitors its own
+  vsync ran it faster, which made attacks miss (#21), enemy attacks invisible
+  (#26) and Maria's walk loop (#10). Vsync now stays on only where it gives
+  60 fps (60/120/180/240 Hz). `fps` and `vsync` in `gosr.ini` still override it.
+- Undecodable videos are now named in the crash log.
+- Troubleshooting updated (videos, language, Proton versions).
+
+Update: extract into a new folder and run `Setup.bat` again, your save is kept.
+Download `GoSRecomp-1.0.8.zip` below (not "Source code").
+
 # GoSRecomp 1.0.7
 
 - Controllers other than PlayStation and Xbox (Switch Pro, 8BitDo and others

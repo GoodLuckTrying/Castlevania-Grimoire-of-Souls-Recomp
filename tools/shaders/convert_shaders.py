@@ -176,9 +176,9 @@ def msl_of(sub):
 
 
 # A program for variants the translator cannot handle (instancing buffers):
-# draws nothing rather than failing the whole shader.
+# draws nothing (the pixel stage discards) rather than failing the whole shader.
 STUB_VS = "struct O { float4 p : SV_Position; };\nO main() { O o; o.p = float4(0, 0, 0, 0); return o; }\n"
-STUB_PS = "float4 main() : SV_Target0 { return float4(1, 0, 1, 1); }\n"
+STUB_PS = "float4 main() : SV_Target0 { discard; return float4(0, 0, 0, 0); }\n"
 
 
 def member_offsets(info):
